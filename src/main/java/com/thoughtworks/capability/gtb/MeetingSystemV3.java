@@ -1,6 +1,9 @@
 package com.thoughtworks.capability.gtb;
 
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -25,17 +28,31 @@ public class MeetingSystemV3 {
     // 从字符串解析得到会议时间
     LocalDateTime meetingTime = LocalDateTime.parse(timeStr, formatter);
 
+    //将伦敦时间转成北京时间
+    meetingTime = converTime(meetingTime, ZoneId.of("Europe/London"),ZoneId.systemDefault());
+
+
     LocalDateTime now = LocalDateTime.now();
     if (now.isAfter(meetingTime)) {
       LocalDateTime tomorrow = now.plusDays(1);
-      int newDayOfYear = tomorrow.getDayOfYear();
-      meetingTime = meetingTime.withDayOfYear(newDayOfYear);
+      Period period = Period.between(meetingTime.toLocalDate(), tomorrow.toLocalDate());
+      meetingTime = meetingTime.plus(period);
+
+      //将北京时间转换承芝加哥时间
+      meetingTime = converTime(meetingTime, ZoneId.systemDefault(),ZoneId.of("America/Chicago"));
 
       // 格式化新会议时间
       String showTimeStr = formatter.format(meetingTime);
-      System.out.println(showTimeStr);
+      System.out.println("The meeting starts at "+showTimeStr);
     } else {
-      System.out.println("会议还没开始呢");
+      meetingTime = converTime(meetingTime, ZoneId.systemDefault(), ZoneId.of("America/Chicago"));
+      // 格式化新会议时间
+      String showTimeStr = formatter.format(meetingTime);
+      System.out.println("The meeting starts at "+showTimeStr);
     }
+  }
+
+  public static LocalDateTime converTime(LocalDateTime fromDateTime,ZoneId from,ZoneId to){
+    return ZonedDateTime.of(fromDateTime, from).withZoneSameInstant(to).toLocalDateTime();
   }
 }
